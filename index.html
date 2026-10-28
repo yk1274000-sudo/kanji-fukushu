@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="漢字復習">
+<meta name="theme-color" content="#a8366a">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<title>まちがえた漢字 復習テスト</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* layout: 漢字テストの問題用紙。1回10問を1枚に並べ、答えはノートに書いてから赤ペンで丸つけする */
+:root{
+  --bg:#eef1f6; --paper:#ffffff; --ink:#1b2440; --sub:#5b6684; --line:#d5dbe8;
+  --pen:#d8322b; --pen-soft:#fdecea; --ok:#1f8a5b; --ok-soft:#e6f4ed; --acc:#a8366a;
+  --f-q:"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  --f-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11141c; --paper:#1a1f2b; --ink:#e7eaf3; --sub:#9aa4bf; --line:#323a4d;
+  --pen:#ff6f61; --pen-soft:#3a1f1e; --ok:#4fc08d; --ok-soft:#17302a; --acc:#e283ad; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11141c; --paper:#1a1f2b; --ink:#e7eaf3; --sub:#9aa4bf; --line:#323a4d;
+  --pen:#ff6f61; --pen-soft:#3a1f1e; --ok:#4fc08d; --ok-soft:#17302a; --acc:#e283ad; color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.7;
+  padding-inline:16px;padding-block:20px 48px}
+main{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:1.45rem;line-height:1.35;margin:0;text-wrap:balance}
+h2{font-size:1.1rem;margin:0}
+p{margin:0}
+.eyebrow{font-size:.78rem;letter-spacing:.12em;color:var(--sub);font-weight:700}
+.note{font-size:.84rem;color:var(--sub)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:inherit;cursor:pointer;border-radius:6px}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.btn{background:var(--acc);color:var(--paper);border:0;padding:12px 16px;font-weight:700;font-size:1rem;width:100%}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.rev{background:var(--pen-soft);color:var(--ink);border:1px solid var(--pen)}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--sub);text-decoration:underline;font-size:.85rem;align-self:flex-start}
+.sets{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.set{background:var(--paper);border:1.5px solid var(--line);padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.set b{font-size:1rem}
+.set span{font-size:.76rem;color:var(--sub);font-variant-numeric:tabular-nums}
+.set.done{border-color:var(--ok)}
+.set.hasx{border-color:var(--pen)}
+ol.qs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+ol.qs li{display:grid;grid-template-columns:2.2em 1fr;gap:4px 6px;padding:12px 0;border-bottom:1px dashed var(--line)}
+ol.qs li:last-child{border-bottom:0}
+.num{font-family:var(--f-q);font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
+.sent{font-family:var(--f-q);font-size:1.12rem;line-height:1.9;min-width:0}
+.sent u{font-weight:600;text-decoration-color:var(--acc);text-decoration-thickness:2px;text-underline-offset:5px}
+.ans{grid-column:2;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.kanji{font-family:var(--f-q);font-size:1.7rem;font-weight:600;color:var(--pen);line-height:1.3}
+.judge{display:flex;gap:6px;margin-left:auto}
+.judge button{width:44px;height:40px;border:1.5px solid var(--line);background:var(--paper);font-size:1.15rem;font-weight:700;color:var(--sub)}
+.judge button.o[aria-pressed="true"]{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.judge button.x[aria-pressed="true"]{border-color:var(--pen);background:var(--pen-soft);color:var(--pen)}
+table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+textarea{font:inherit;font-size:.85rem;width:100%;padding:8px;border:1.5px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);resize:vertical}
+.sync[data-mode="local"]{color:var(--pen)}
+.btn:disabled{opacity:.45;cursor:default}
+.score{font-family:var(--f-q);font-size:1.5rem;font-weight:600;color:var(--pen);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+// 「文|答え」。{ } の中が漢字に直すカタカナ
+const RAW = `{ソウチョウ}に起きて散歩する。|早朝
+新しい{カンジ}を五つ覚えた。|漢字
+言葉の{イミ}を辞典で調べる。|意味
+スープの{アジ}をみる。|味
+この町は{コウツウ}の便がよい。|交通
+山の{リョカン}にとまる。|旅館
+店の前に長い{ギョウレツ}ができる。|行列
+クラスで{ギロン}を重ねる。|議論
+開会式で{キシュ}をつとめる。|旗手
+入学が人生の{テンキ}になった。|転機
+実験の{キグ}を片づける。|器具
+{テバタ}で合図を送る。|手旗
+{ダイク}さんが家を建てる。|大工
+{ヤネ}の上に雪が積もる。|屋根
+{キョネン}の夏は暑かった。|去年
+{ショクブツ}図かんで花の名前を調べる。|植物
+日本には春夏秋冬の{シキ}がある。|四季
+{ケツギアン}が会議で通る。|決議案
+出番が来るまで自宅で{タイキ}する。|待機
+ねだんを下げるよう{ヨウキュウ}する。|要求
+幸せな生き方を{タンキュウ}する。（さがしもとめる）|探求
+{ショッキ}をたなにしまう。|食器
+{カキ}オリンピックを見る。（夏の大会）|夏季
+{キショウ}な生き物を守る。|希少
+{ガッキュウシンブン}を作る。|学級新聞
+なやみを先生に{ソウダン}する。|相談
+四月に{ニュウガクシキ}がある。|入学式
+弟の{ヨウス}がいつもとちがう。|様子
+手紙に{ジュウショ}を書く。|住所
+かぜで{ハナ}がつまる。|鼻
+祖父は{ショウワ}生まれだ。|昭和
+来週、漢字のテストを{ウケル}。|受ける
+かっていた金魚が{シヌ}。|死ぬ
+{スイゾクカン}でイルカを見る。|水族館
+今日の{デキゴト}を日記に書く。|出来事
+{ギンコウ}にお金をあずける。|銀行
+駅の{カイサツグチ}で待ち合わせる。|改札口
+{チャクイ}のまま泳ぐ練習をする。|着衣
+日曜日{イガイ}は店が開いている。|以外
+ネオンがかがやく夜の{マチ}を歩く。（商店がならぶところ）|街
+社会で高い{チイ}につく。|地位
+書類に{イン}かんをおす。|印
+クラスが{イチガン}となって戦う。|一丸
+えんぴつを{ツカウ}。|使う
+本の{モクジ}を見る。|目次
+地図で{トウザイナンボク}をたしかめる。|東西南北
+算数の{モンダイ}をとく。|問題
+電車が駅に{ツク}。|着く
+サッカー{キョウカイ}に入る。|協会
+母が{キョウダイ}の前でかみをとかす。|鏡台
+二人には{キョウツウ}点がある。|共通
+この町は{ギョギョウ}がさかんだ。|漁業
+食料を{ハイキュウ}する。|配給
+会社が利益を{ツイキュウ}する。（おいもとめる）|追求
+{トウキ}オリンピックが開かれる。（冬の大会）|冬季
+午後から{カイギ}がある。|会議
+工場の{キカイ}が動く。|機械
+大昔の{セッキ}が見つかる。|石器
+{コッキ}をかかげる。|国旗
+{キボウ}をもって進む。|希望
+助けを{モトメル}。|求める
+店どうしが売り上げを{キョウソウ}する。（あらそう）|競争
+みんなと{キョウチョウ}して作業する。|協調
+赤ちゃんが{ナク}。|泣く
+{キョウエイ}の大会に出る。|競泳
+{ノウキョウ}で野菜を売る。|農協
+{コウキョウ}の場所ではしずかにする。|公共
+船が{ギョコウ}に帰る。|漁港
+{カガミ}に顔をうつす。|鏡
+わかった人は{キョシュ}する。|挙手
+今日は{タイリョウ}で港がにぎわう。|大漁
+市長を{センキョ}でえらぶ。|選挙
+{ジキュウジソク}の生活を送る。|自給自足
+百メートル{キョウソウ}で一位になる。（走る）|競走
+{ギフ}県は日本のまん中にある。|岐阜
+飛行機の{キチョウ}があいさつする。|機長
+けいさつ{カン}が道を教える。|官
+今後の予定をみんなで{キョウギ}する。|協議
+長年の{ネンガン}がかなう。|念願
+{カンガッキ}をえんそうする。|管楽器
+日本の{キョウツウゴ}で話す。|共通語
+山で{クマ}に出会う。|熊
+{ホッキョクセイ}は北の空にある。|北極星
+山の上からの{ケシキ}がすばらしい。|景色
+{クマデ}で落ち葉を集める。|熊手
+漢字の{クンヨ}みを覚える。|訓読
+{ユウガイ}なガスが発生する。|有害
+クラブに{カニュウ}する。|加入
+この地いきは{コウギョウ}がさかんだ。|工業
+{エイコク}へ旅行する。（イギリス）|英国
+春になり草木の{メ}が出る。|芽
+町が{サカエル}。|栄える
+{エイゴ}で話しかける。|英語
+工場で{サギョウイ}に着がえる。|作業衣
+まいた種が{ハツガ}する。|発芽
+{マチカド}でばったり友人に会う。|街角
+政治に{カンシン}をもつ。（きょうみ）|関心
+ものごとを{キャッカン}的に考える。|客観
+土地を兄弟で{キョウユウ}する。|共有
+大きな事件に{カカワル}。|関わる
+友だちの名前を{オボエル}。|覚える
+世界の平和を{ネガウ}。|願う
+{オヤコ}で料理をする。|親子
+{コウガイ}をなくす努力をする。|公害
+アサガオを{カンサツ}する。|観察
+{ニイガタ}県は米どころだ。|新潟
+胃は食べ物を消化する{キカン}だ。|器官
+京都を{カンコウ}する。|観光
+火事にそなえて{ショウカキ}を置く。|消火器
+ねん土がかわいて{カタマル}。|固まる
+毎日の練習を{カカサ}ない。|欠かさ
+{エンゲイ}店で花のなえを買う。|園芸
+小鳥が{ムレル}。|群れる
+円の{ハンケイ}をはかる。|半径
+失敗を{キョウクン}にする。|教訓
+すもうの行司が{グンバイ}を上げる。|軍配
+{セッキョクテキ}に発言する。|積極的
+県の中の市や{グン}の名前を調べる。|郡
+くじ引きで{ケイヒン}をもらう。|景品
+{グンマ}県には温泉が多い。|群馬
+{グンブ}の人口がへる。（市ではないところ）|郡部
+円の{チョッケイ}は半径の二倍だ。|直径
+昔の{グンカ}を聞く。|軍歌
+けがの{コウミョウ}。|功名
+{シュゲイ}でマフラーをあむ。|手芸
+中学を{ジュケン}する。|受験
+自分の{ケッテン}を直す。|欠点
+{ケンゼン}な心と体を育てる。|健全
+テストの{ケッカ}が出る。|結果
+{コケイ}の石けんを使う。|固形
+委員に{ケツイン}が出る。|欠員
+理科の{ジッケン}をする。|実験
+でんとう的な{コウゲイヒン}を買う。|工芸品
+くつのひもを{ムスブ}。|結ぶ
+バラの花のよい{カオリ}がする。|香り
+友だちの{コウイ}に感しゃする。|好意
+畑で{ヤサイ}を育てる。|野菜
+日本とアメリカには{ジサ}がある。|時差
+{ケンコウテキ}な生活を送る。|健康的
+手紙に{ジコウ}のあいさつを書く。|時候
+{ゴゴ}三時におやつを食べる。|午後
+長年の{コウロウシャ}を表しょうする。|功労者
+気分が悪いので{ホケンシツ}で休む。|保健室
+げんかんに{ヒョウサツ}をかける。|表札
+新聞を{スル}。（いんさつする）|刷る
+{サンコウショ}で調べる。|参考書
+{キンカンニッショク}を観察する。|金環日食
+神社にお{マイリ}する。|参り
+{ミヤザキ}県は九州にある。|宮崎
+チームの調子は{コウチョウ}だ。|好調
+かぜで学校を{ケッセキ}する。|欠席
+家庭{サイエン}でトマトを作る。|菜園
+たなをかべに{コテイ}する。|固定
+両国の関係は{リョウコウ}だ。|良好
+実験が{セイコウ}する。|成功
+{キュウキョク}の目標を立てる。|究極
+イナゴの{タイグン}が飛ぶ。|大群
+新しいチームを{ケッセイ}する。|結成
+アリがさとうに{ムラガル}。|群がる
+人工{エイセイ}を打ち上げる。|衛星
+大きな橋を{ケンセツ}する。|建設
+ゾウの{ムレ}が草原を歩く。|群れ
+一年中あたたかい{キコウ}の土地。|気候
+{タイサ}は軍隊の階級の一つだ。|大佐
+日本{サイコ}の木造の建物。|最古
+地面に{スイチョク}な線を引く。|垂直
+部長を{ホサ}する。|補佐
+病気が{ショウコウ}をたもつ。|小康
+{コウサテン}で信号を待つ。|交差点
+今年の{サイコウ}気温を記録する。|最高
+{サイショウ}の数を答える。|最小
+{テンコウ}が悪く、試合が中止になる。|天候
+みごとなわざに{カンプク}する。|感服
+月曜日の朝に{チョウレイ}がある。|朝礼
+{ゲヒン}な言葉を使わない。|下品
+うそつきの{バケ}の皮がはがれる。|化け
+山田、田中の{リョウシ}が出席する。|両氏
+{メイジ}時代の建物が残る。|明治
+{シレイカン}が命令を出す。|司令官
+風が花びらを{チラス}。|散らす
+学級会の{シカイ}をつとめる。|司会
+新しい方法を{ココロミル}。|試みる
+{ジチカイ}のそうじに参加する。|自治会
+父も{イクジ}に協力する。|育児
+きびしい{シレン}をのりこえる。|試練
+雨で遠足が中止になり{ザンネン}だ。|残念
+王が国を{オサメル}。|治める
+人口を地方に{ブンサン}させる。|分散
+父は{ザンギョウ}で帰りがおそい。|残業
+自動車{サンギョウ}がさかんだ。|産業
+会社の{ジョウシ}に相談する。|上司
+すきな詩人の{シシュウ}を読む。|詩集
+ノートに名前を{シルス}。|記す
+的に向かって矢を{ハナツ}。|放つ
+病院で{ケツエキ}を調べる。|血液
+{ジョウミャク}は血液を心ぞうにもどす血管だ。|静脈
+かぜのときは{アンセイ}にする。|安静
+くわしい説明を{ショウリャク}する。|省略
+自分の失敗を{ハンセイ}する。|反省
+銅の屋根に{ロクショウ}がふく。（青緑色のさび）|緑青
+すべてのものは{ルテン}する。（うつり変わる）|流転
+{ギョセン}が沖に出る。|漁船
+{リョウシ}があみで魚をとる。|漁師
+人気の本を{ゾウサツ}する。|増刷
+びわ湖は{シガ}県にある。|滋賀
+池の{マワリ}を歩く。|周り
+{カゴシマ}県にさくら島がある。|鹿児島
+妹のたん生日を{イワウ}。|祝う
+お先に{シツレイ}します。|失礼
+五月五日は{シュクジツ}だ。|祝日
+図書館で本を{カリル}。|借りる
+けっこん式に{シュクデン}を送る。|祝電
+奈良公園で{シカ}にえさをやる。|鹿
+{シャクヤ}に住む。（かりた家）|借家
+けががなかったのは{フコウチュウ}の幸いだ。|不幸中
+外国語は{イッチョウイッセキ}には身につかない。|一朝一夕
+どの方法にも{イッチョウイッタン}がある。|一長一短
+{フクダイジン}が記者会見をする。|副大臣
+夕日で空が{マッカ}にそまる。|真っ赤
+{ネエサン}といっしょに買い物に行く。|姉さん
+シャワーを{アビル}。|浴びる
+茶わんのふちが{カケル}。|欠ける
+お寺でお{ネンブツ}をとなえる。|念仏
+雪を{カタメル}。|固める
+{ビン}せんに手紙を書く。|便
+{ハクブツカン}で恐竜を見る。|博物館
+秋になり木の葉の色が{カワル}。|変わる`;
+const Q = RAW.split("\n").map((l, i) => { const p = l.split("|"); return { id: i, s: p[0], a: p[1] }; });
+const PER = 10, SETS = Math.ceil(Q.length / PER);
+const app = document.getElementById("app");
+const KEY = "kanji-fukushu-v1";
+// D = { m: {問題id: "o"|"x"}, log: [{id, k, t, o, x, n}] }
+let D = { m: {}, log: [] };
+try {
+  const raw = JSON.parse(localStorage.getItem(KEY));
+  if (raw && raw.m) D = { m: raw.m, log: raw.log || [] };
+  else if (raw) D.m = raw;
+} catch(e) {}
+let DOC = null, MODE = "local", SYNC = "読みこみ中…", S = null;
+let writing = false, pending = false;
+const esc = s => String(s).replace(/[&<>"]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const sent = s => esc(s).replace(/\{(.+?)\}/g, "<u>$1</u>");
+const M = () => D.m;
+const wrong = () => Q.filter(q => D.m[q.id] === "x");
+const fmtDate = t => { const d = new Date(t); return (d.getMonth() + 1) + "/" + d.getDate() + " " + d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0"); };
+const setQs = i => Q.slice(i * PER, i * PER + PER);
+const lastLog = k => { for (let i = D.log.length - 1; i >= 0; i--) if (D.log[i].k === k) return D.log[i]; return null; };
+
+function merge(a, b) {
+  const m = Object.assign({}, a.m, b.m), seen = {}, log = [];
+  a.log.concat(b.log).forEach(e => { if (!seen[e.id]) { seen[e.id] = 1; log.push(e); } });
+  log.sort((x, y) => x.t - y.t);
+  return { m, log: log.slice(-500) };
+}
+function saveLocal() { try { localStorage.setItem(KEY, JSON.stringify(D)); return true; } catch(e) { return false; } }
+async function pushCloud() {
+  if (!DOC) return;
+  if (writing) { pending = true; return; }
+  writing = true;
+  try { await DOC.set({ m: D.m, log: D.log, updatedAt: Date.now() }); SYNC = "保存しました（ログインしている端末ならどれでも続きができます）"; }
+  catch(e) { SYNC = "保存できませんでした。通信を確認してください"; }
+  writing = false; showSync();
+  if (pending) { pending = false; pushCloud(); }
+}
+function save() { const ok = saveLocal(); if (!DOC && !ok) SYNC = "この画面ではブラウザに保存できません。引き継ぎコードを使ってください"; pushCloud(); showSync(); }
+function showSync() { document.querySelectorAll(".sync").forEach(el => { el.textContent = SYNC; el.dataset.mode = MODE; }); }
+function syncLine() { return '<p class="note sync" data-mode="' + MODE + '">' + esc(SYNC) + '</p>'; }
+
+(async () => {
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(e) {}
+  try {
+    const db = window.claude && await window.claude.use("db");
+    if (!db) {
+      MODE = "local";
+      SYNC = navigator.standalone || matchMedia("(display-mode: standalone)").matches ? "この端末に保存しています。ときどき「引き継ぎコード」をコピーしておくと安心です" : "この端末に保存しています。消えないように、Safariの共有ボタン→「ホーム画面に追加」から開いてください";
+      return showSync();
+    }
+    DOC = db.doc("progress/main");
+    const snap = await DOC.get();
+    const remote = snap.exists ? { m: snap.data().m || snap.data().marks || {}, log: snap.data().log || [] } : { m: {}, log: [] };
+    const before = JSON.stringify(remote);
+    D = merge(D, remote);
+    saveLocal();
+    MODE = "cloud"; SYNC = "保存しました（ログインしている端末ならどれでも続きができます）";
+    if (JSON.stringify({ m: D.m, log: D.log }) !== before) pushCloud();
+    if (S) render(); else home();
+  } catch(e) { MODE = "local"; SYNC = "保存先につながらないため、この端末だけに保存しています"; showSync(); }
+})();
+
+function home() {
+  S = null;
+  const w = wrong(), done = Q.filter(q => D.m[q.id]).length, ok = Q.filter(q => D.m[q.id] === "o").length;
+  let h = '<header class="stack"><p class="eyebrow">漢字ノートと学校のテストから ／ 全 ' + Q.length + ' 問</p><h1>まちがえた漢字　復習テスト</h1>' +
+    '<p class="note">線を引いたカタカナを漢字に直して、ノートに書きましょう。書き終わったら「答えを見る」で丸つけをします。</p>' +
+    '<p class="note">丸つけした問題 ' + done + ' / ' + Q.length + '　（○ ' + ok + '・× ' + w.length + '）</p>' + syncLine() + '</header>';
+  if (w.length) h += '<button class="btn rev" data-wrong>×の問題だけテストする（' + w.length + ' 問）</button>';
+  h += '<div class="sets">';
+  for (let i = 0; i < SETS; i++) {
+    const qs = setQs(i), o = qs.filter(q => D.m[q.id] === "o").length, x = qs.filter(q => D.m[q.id] === "x").length, L = lastLog(i);
+    h += '<button class="set' + (x ? " hasx" : o === qs.length ? " done" : "") + '" data-set="' + i + '"><b>第' + (i + 1) + '回' + (L ? ' ✓' : '') + '</b><span>' +
+      (i * PER + 1) + '〜' + (i * PER + qs.length) + '</span><span>' + (L ? fmtDate(L.t) + '　○' + L.o + ' ×' + L.x : (o + x ? "とちゅう ○" + o + " ×" + x : "まだ")) + '</span></button>';
+  }
+  h += '</div>';
+  const recent = D.log.slice(-10).reverse();
+  h += '<section class="sheet"><h2>やった記録</h2>' + (recent.length
+    ? '<table><thead><tr><th>日時</th><th>回</th><th>結果</th></tr></thead><tbody>' + recent.map(e => '<tr><td>' + fmtDate(e.t) + '</td><td>' + (e.k === -1 ? "×の問題" : "第" + (e.k + 1) + "回") + '</td><td>○' + e.o + ' ×' + e.x + '</td></tr>').join("") + '</tbody></table>'
+    : '<p class="note">まだ記録はありません。テストの丸つけが終わったら「結果を記録する」をおしましょう。</p>') + '</section>';
+  h += '<section class="sheet"><h2>引き継ぎコード</h2><p class="note">ほかの端末に記録をうつすときや、記録が消えたときのために使います。コードをコピーしてメモなどに残し、別の端末で「コードから読みこむ」にはりつけます。</p>' +
+    '<button class="btn ghost" data-copy>コードをコピーする</button>' +
+    '<textarea id="code" rows="3" placeholder="ここにコードをはりつけ"></textarea>' +
+    '<button class="btn ghost" data-import>コードから読みこむ</button><p class="note" id="codemsg"></p></section>';
+  app.innerHTML = h;
+  window.scrollTo(0, 0);
+}
+
+function test(list, title, k) { S = { list, title, k, logged: false }; S.shown = false; render(); window.scrollTo(0, 0); }
+
+function render() {
+  const o = S.list.filter(q => D.m[q.id] === "o").length, x = S.list.filter(q => D.m[q.id] === "x").length, all = o + x === S.list.length;
+  let h = '<button class="linkbtn" data-home>← 一覧にもどる</button><section class="sheet"><div class="row"><h2>' + S.title + '</h2>' +
+    (S.shown ? '<span class="score">○ ' + o + '　× ' + x + '</span>' : '<span class="note">' + S.list.length + ' 問</span>') + '</div>' +
+    '<p class="note">' + (S.shown ? "ノートの答えとくらべて、○ か × をおしましょう。とめ・はね・はらい、送りがなも見ます。" : "線を引いたカタカナを漢字に直して、番号といっしょにノートに書きましょう。") + '</p><ol class="qs">';
+  S.list.forEach((q, i) => {
+    h += '<li><span class="num">' + (i + 1) + '</span><span class="sent">' + sent(q.s) + '</span>';
+    if (S.shown) h += '<div class="ans"><span class="kanji">' + esc(q.a) + '</span><span class="judge">' +
+      '<button class="o" data-j="o" data-id="' + q.id + '" aria-pressed="' + (D.m[q.id] === "o") + '" aria-label="正解">○</button>' +
+      '<button class="x" data-j="x" data-id="' + q.id + '" aria-pressed="' + (D.m[q.id] === "x") + '" aria-label="まちがい">×</button></span></div>';
+    h += '</li>';
+  });
+  h += '</ol>';
+  if (!S.shown) h += '<button class="btn" data-show>答えを見る</button>';
+  else {
+    h += S.logged ? '<p class="note">記録しました。</p>' : '<button class="btn" data-log' + (all ? '' : ' disabled') + '>結果を記録する' + (all ? '' : '（全部の ○× をつけてから）') + '</button>';
+    h += syncLine();
+    if (S.k != null && S.k + 1 < SETS) h += '<button class="btn ghost" data-set="' + (S.k + 1) + '">第' + (S.k + 2) + '回へ進む</button>';
+    h += '<button class="btn ghost" data-home>一覧にもどる</button>';
+  }
+  app.innerHTML = h + '</section>';
+}
+
+function copyCode() {
+  const code = btoa(unescape(encodeURIComponent(JSON.stringify(D))));
+  const ta = document.getElementById("code"), msg = document.getElementById("codemsg");
+  ta.value = code;
+  const fallback = () => { ta.focus(); ta.select(); msg.textContent = "コードを選んだので、長おしでコピーしてください"; };
+  try { navigator.clipboard.writeText(code).then(() => { msg.textContent = "コピーしました。メモなどにはりつけて残しましょう"; }, fallback); } catch(e) { fallback(); }
+}
+function importCode() {
+  const ta = document.getElementById("code"), msg = document.getElementById("codemsg");
+  try {
+    const d = JSON.parse(decodeURIComponent(escape(atob(ta.value.trim()))));
+    if (!d || typeof d.m !== "object") throw 0;
+    D = merge(D, { m: d.m, log: d.log || [] }); save(); home();
+    document.getElementById("codemsg").textContent = "読みこみました";
+  } catch(e) { msg.textContent = "コードが読めませんでした。全部コピーできているか確かめてください"; }
+}
+
+app.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t || t.disabled) return;
+  if ("home" in t.dataset) return home();
+  if (t.dataset.set != null) { const i = Number(t.dataset.set); return test(setQs(i), "第" + (i + 1) + "回", i); }
+  if ("wrong" in t.dataset) return test(wrong(), "×の問題", -1);
+  if ("show" in t.dataset) { S.shown = true; return render(); }
+  if ("copy" in t.dataset) return copyCode();
+  if ("import" in t.dataset) return importCode();
+  if ("log" in t.dataset) {
+    const o = S.list.filter(q => D.m[q.id] === "o").length, x = S.list.filter(q => D.m[q.id] === "x").length;
+    D.log.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), k: S.k, t: Date.now(), o, x, n: S.list.length });
+    S.logged = true; save(); const y = window.scrollY; render(); window.scrollTo(0, y); return;
+  }
+  if (t.dataset.j) { const y = window.scrollY; D.m[t.dataset.id] = t.dataset.j; save(); render(); window.scrollTo(0, y); }
+});
+home();
+</script>
+</body>
+</html>
